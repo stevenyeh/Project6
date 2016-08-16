@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="http://d3js.org/d3.v3.min.js"></script>
+  <script src="http://dimplejs.org/dist/dimple.v2.0.0.min.js"></script>
+  <style>
+  /* format the title */
+    h2 {
+      text-align: center;
+      color: DarkSlateBlue;
+      font: 30px Georgia, sans-serif;
+    }
+    h4 {
+        text-align: center;
+        color: DarkSlateBlue;
+        font: 15px Georgia, sans-serif;
+    }
+    h5 {
+      text-align: center;
+      color: DarkSlateBlue;
+      font: 15px Georgia, sans-serif;
+    }
+    h6 {
+        text-align: center;
+        color: DarkSlateBlue;
+        font: 14px Georgia, sans-serif;
+    }
+  </style>
+    <script type="text/javascript">
+      function draw(data) {
+        /* Create a visualization that shows differences
+        among the performance of the baseball players.
+
+        d3 setup code
+        */
+          // loop through each datapoint
+          data.forEach(function(d) {
+            // create new feature HRsqrt
+              d["HRsqrt"] = Math.sqrt(+d.HR);
+          });
+
+        "use strict";
+        var margin = 75,
+          width = 1400 - margin,
+          height = 1000 - margin;
+
+        d3.select("body")
+          .append("h2")
+          // paragraphs about the dataset and visualization
+          .text("Batting Average and HRs by Height and Handedness")
+          .append("h4")
+          .text("This is a visualization of a dataset on 891 professional \
+          baseball players consisting of data on physical characteristics \
+          such as height and weight and career baseball performance metrics, \
+          including batting average, total home runs, and batting handedness \
+           (left, right, or both).")
+          .append("h5")
+          .text("Notice three relatively larger bubbles: \
+          left handers at 67 inches, both handers at 76 inches, \
+          and right handers at 78 inches. In the data set, there are only \
+          two left handers at 67 inches. There is only one both hander at 76 \
+          inches. There is only one right hander at 78 inches. There were a \
+          total of 256 left handers, 546 right handers, and 89 both handed \
+          batters.")
+          .append("h6")
+          .text("Warning: In this visualization, an average of batting \
+          averages is being calculated, which can be misleading because a \
+          player hitting an average of 0.250 might have hit 1 out of a total 4 \
+          times or 1000 out of 4000 times. Averages do not reveal information \
+          about how prolific a career a given player had. ")
+
+
+        var svg = d3.select("body")
+          .append("svg")
+            .attr("width", width + margin)
+            .attr("height", height + margin)
+          .append('g')
+              .attr('class','chart');
+
+        /*
+          Dimple.js construction code
+        */
+
+        var chart = new dimple.chart(svg, data);
+        var chart_x = chart.addCategoryAxis("x", "height");
+        chart_x.title = "Height";
+
+        // add gridlines for visibility //
+        chart_x.showGridlines = true;
+        var chart_y = chart.addMeasureAxis("y", "avg");
+        chart_y.title = "Batting Average";
+
+        // space the y-axis tickmarks //
+        chart_y.tickFormat = ".3f"
+
+        var chart_z = chart.addMeasureAxis("z", "HRsqrt");
+        // reduce bubble size
+        chart_z.overrideMax = 30;
+        var bubble = chart.addSeries(["handedness"],  dimple.plot.bubble);
+
+        // add a trendline on top of the bubbles //
+        var line = chart.addSeries(["handedness"], dimple.plot.line);
+        // make lines thinner
+        line.lineWeight = 1;
+
+        // take the mean of batting average for each height //
+        bubble.aggregate = dimple.aggregateMethod.avg;
+        line.aggregate = dimple.aggregateMethod.avg;
+
+        // set order for handedness for every height //
+        bubble.addOrderRule(['Left Handed','Right Handed','Both Handed'], false);
+        chart.addLegend(100, 10, 1100, 20, "right");
+        chart.draw();
+
+        // access tool tip so that when you hover,
+        // total HRs is shown instead of sqrtHR
+        bubble.getTooltipText = function(e) {
+          return ["Height: " + e.cx, "Mean Batting Average: "
+          + e.cy, "Total Home Runs: " + Math.round( e.cz*e.cz )];
+            };
+
+        /* this only appears for tiny circles where mouseover only works for
+        the line graph */
+        line.getTooltipText = function(e) {
+            if (e.cx === '68' | e.cx === '78') {
+                return ["Height: " + e.cx, "Mean Batting Average: "
+                + e.cy, "Total Home Runs: " + '0'];}
+            else {
+                // remove tooltips
+            ;}
+        };
+      };
+    </script>
+  </head>
+<body>
+  <script type="text/javascript">
+/*
+  Use D3 (not dimple.js) to load the TSV file
+  and pass the contents of it to the draw function
+  */
+  d3.csv("baseball_data_edited.csv", draw);
+
+
+  </script>
+</body>
+</html>
